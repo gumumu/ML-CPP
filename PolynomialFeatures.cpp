@@ -16,29 +16,10 @@ void PolynomialFeatures::fit(const Matrix & x)
 	int features_num = x.getColNum();
 	for (int d = include_bias ? 0 : 1; d <= degree; d++)
 	{
-		std::vector<std::vector<int>> ret_vector_list;
-		std::vector<int> ret_vector;
-		polynomial_combination(features_num, d, ret_vector_list, ret_vector);
-		if (interaction_only && d > 1)
-		{
-			std::vector<std::vector<int>>::iterator it;
-			for (it = ret_vector_list.begin(); it != ret_vector_list.end();)
-			{
-				std::vector<int> ret_v = *it;
-				for (int j = 0; j < ret_v.size(); j++)
-				{
-					if (ret_v[j] == d)
-					{
-						it = ret_vector_list.erase(it);
-						goto end_continue;
-					}
-				}
-				++it;
-			end_continue:
-				continue;
-			}
-		}
-		all_ret_vector_list.push_back(ret_vector_list);
+		std::list<std::list<int>> combination_list;
+		std::list<int> combination;
+		polynomial_combination(features_num, d, interaction_only,  combination_list, combination);
+		degree_combination_list.push_back(combination_list);
 	}
 }
 
@@ -46,20 +27,22 @@ Matrix PolynomialFeatures::transform(const Matrix & x) const
 {
 	int row_num = x.getRowNum();
 	Matrix ret_m(row_num,0);
-	for (int i = 0; i < all_ret_vector_list.size(); i++)
+	int i = 0;
+	for (std::list<std::list<std::list<int>>>::const_iterator it_first = degree_combination_list.begin(); it_first != degree_combination_list.end(); ++it_first,++i)
 	{
 		if((!include_bias && i == 0) || (include_bias && i==1)) ret_m = ret_m.getMergeMatrix(x, false);
 		else
 		{
-			std::vector<std::vector<int>> ret_vector_list = all_ret_vector_list[i];
-			for (int j = 0; j < ret_vector_list.size(); j++)
+			std::list<std::list<int>> combination_list = *it_first;
+			for (std::list<std::list<int>>::const_iterator it_second = combination_list.begin(); it_second != combination_list.end(); ++it_second)
 			{
-				std::vector<int> ret_v = ret_vector_list[j];
+				std::list<int> combination = *it_second;
 				Matrix onecol_m(row_num, 1);
 				onecol_m = 1.0;
-				for (int k = 0; k < ret_v.size(); k++)
+				int k = 0;
+				for (std::list<int>::const_iterator it_third = combination.begin(); it_third != combination.end(); ++it_third,++k)
 				{
-					onecol_m = onecol_m.matpow(x.getSubMatrix(-1, -1, k, k).matpow(ret_v[k]));
+					onecol_m = onecol_m.matpow(x.getSubMatrix(-1, -1, k, k).matpow(*it_third));
 				}
 				ret_m = ret_m.getMergeMatrix(onecol_m, false);
 			}
@@ -68,24 +51,27 @@ Matrix PolynomialFeatures::transform(const Matrix & x) const
 	return ret_m;
 }
 
-void PolynomialFeatures::polynomial_combination(int features_num, int degree, std::vector<std::vector<int>>& ret_vector_list, std::vector<int>& ret_vector) const
+void PolynomialFeatures::polynomial_combination(int features_num, int degree, bool interaction_only, std::list<std::list<int>>& combination_list, std::list<int>& combination, bool is_abandon) const
 {
 	if (features_num < 1) return;
 	//if features_num==1,获得并加入一个组合，并结束本条线的递归
 	if (features_num == 1)
 	{
-		std::vector<int> ret_v;
-		ret_v.insert(ret_v.end(), ret_vector.begin(), ret_vector.end());
-		ret_v.push_back(degree);
-		ret_vector_list.push_back(ret_v);
+		if (interaction_only && (is_abandon || degree > 1)) return;							//丢弃自己和自己组合的项
+		std::list<int> one_combination(combination);
+		one_combination.push_back(degree);
+		combination_list.push_back(one_combination);
 		return;
 	}
 	//if features_num>1,递归features_num - 1, degree - i
 	for (int i = degree; i >= 0; i--)
 	{
-		std::vector<int> ret_v;
-		ret_v.insert(ret_v.end(), ret_vector.begin(), ret_vector.end());
-		ret_v.push_back(i);
-		polynomial_combination(features_num - 1, degree - i, ret_vector_list, ret_v);
+		if (interaction_only && (is_abandon || i > 1)) polynomial_combination(features_num - 1, degree - i, interaction_only, combination_list, combination, true); //丢弃自己和自己组合的项
+		else
+		{
+			std::list<int> one_combination(combination);
+			one_combination.push_back(i);
+			polynomial_combination(features_num - 1, degree - i, interaction_only, combination_list, one_combination);
+		}
 	}
 }

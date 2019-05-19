@@ -35,15 +35,23 @@ int main(void)
 		double learning_rate = 0.0004;
 		double decay_rate = 0.0;
 		double momentum = 0.9;
-		SGDRegression lr(learning_rate, decay_rate, momentum, false);
-		lr.fit(x, y, epochs, 8, 0.0001);
+		//SGDRegression lr(learning_rate, decay_rate, momentum, false);
+		//lr.fit(x, y, epochs, 8, 0.0001);
 		//LinearRegression lr;
 		//lr.fit(x, y);
 		
-		cout << lr.predict(x2);
-		cout << y2;
+		//cout << lr.predict(x2);
+		//cout << y2;
 
-		cout <<"score:"<< lr.score(x2, y2);
+		//cout <<"score:"<< lr.score(x2, y2);
+
+		double c[3] = {
+		1,2,3
+		};
+		Matrix z(c, 1, 3);
+		PolynomialFeatures pf(3, true, false);
+		pf.fit(z);
+		cout<<pf.transform(z);
 	}
 	catch (const char *e)
 	{

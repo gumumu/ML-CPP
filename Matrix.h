@@ -5,7 +5,7 @@
 #include <vector>
 
 #define OVERFLOWED 1E-12
-#define IS_DOUBLE_ZERO(d)  (abs(d) < OVERFLOWED)
+#define IS_DOUBLE_ZERO(d)  (fabs(d) < OVERFLOWED)
 
 class Matrix
 {
