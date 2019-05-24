@@ -2,7 +2,7 @@
 
 
 
-BaseRegression::BaseRegression():module(0)
+BaseRegression::BaseRegression()
 {
 }
 

@@ -8,6 +8,6 @@ public:
 	LinearRegression();
 	~LinearRegression();
 
-	void fit(const Matrix &x, const Matrix &y);		//利用正态方程线性回归训练模型参数
+	virtual void fit(const Matrix &x, const Matrix &y);		//利用正态方程线性回归训练模型参数
 };
 

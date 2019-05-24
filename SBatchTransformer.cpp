@@ -41,10 +41,10 @@ void SBatchTransformer::fit(const Matrix & x)
 
 Matrix SBatchTransformer::transform(const Matrix & x) const
 {
-	Matrix ret_m(0, x.getColNum());
+	Matrix ret_m(batch_size, x.getColNum());
 	for (int i = base_index; i < base_index + batch_size; i++)
 	{
-		ret_m = ret_m.getMergeMatrix(x.getSubMatrix(batch_indexs[i], batch_indexs[i], -1, -1));
+		ret_m.set_row_col(x.getSubMatrix(batch_indexs[i], batch_indexs[i], -1, -1), i - base_index, i - base_index, -1, -1);
 	}
 	return ret_m;
 }

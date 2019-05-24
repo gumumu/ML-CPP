@@ -4,6 +4,8 @@
 #include "LinearRegression.h"
 #include "SGDRegression.h"
 #include "PolynomialFeatures.h"
+#include "StandardScaler.h"
+#include "Ridge.h"
 
 using namespace std;
 
@@ -32,26 +34,21 @@ int main(void)
 		}
 		
 		long epochs = 100000;
+		int batch_size = 8;
+		double tolerance = 0.0001;
 		double learning_rate = 0.0004;
 		double decay_rate = 0.0;
 		double momentum = 0.9;
-		//SGDRegression lr(learning_rate, decay_rate, momentum, false);
-		//lr.fit(x, y, epochs, 8, 0.0001);
+		//SGDRegression lr(epochs, 8, 0.0001, learning_rate, decay_rate, momentum, false);
 		//LinearRegression lr;
-		//lr.fit(x, y);
+		Ridge lr(0.45);
+
+		lr.fit(x, y);
 		
-		//cout << lr.predict(x2);
-		//cout << y2;
+		cout << lr.predict(x2);
+		cout << y2;
 
-		//cout <<"score:"<< lr.score(x2, y2);
-
-		double c[3] = {
-		1,2,3
-		};
-		Matrix z(c, 1, 3);
-		PolynomialFeatures pf(3, true, false);
-		pf.fit(z);
-		cout<<pf.transform(z);
+		cout <<"score:"<< lr.score(x2, y2);
 	}
 	catch (const char *e)
 	{

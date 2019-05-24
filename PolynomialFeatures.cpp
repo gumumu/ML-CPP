@@ -26,25 +26,36 @@ void PolynomialFeatures::fit(const Matrix & x)
 Matrix PolynomialFeatures::transform(const Matrix & x) const
 {
 	int row_num = x.getRowNum();
-	Matrix ret_m(row_num,0);
+	int col_num = 0;
+	for (std::list<std::list<std::list<int>>>::const_iterator it_first = degree_combination_list.begin(); it_first != degree_combination_list.end(); ++it_first)
+	{
+		col_num += ((std::list<std::list<int>>)*it_first).size();
+	
+	}
+
+	Matrix ret_m(row_num, col_num);
 	int i = 0;
+	int index = 0;
 	for (std::list<std::list<std::list<int>>>::const_iterator it_first = degree_combination_list.begin(); it_first != degree_combination_list.end(); ++it_first,++i)
 	{
-		if((!include_bias && i == 0) || (include_bias && i==1)) ret_m = ret_m.getMergeMatrix(x, false);
+		if ((!include_bias && i == 0) || (include_bias && i == 1)) {
+			ret_m.set_row_col(x, -1, -1, index, index + x.getColNum() - 1);
+			index += x.getColNum();
+		}
 		else
 		{
 			std::list<std::list<int>> combination_list = *it_first;
 			for (std::list<std::list<int>>::const_iterator it_second = combination_list.begin(); it_second != combination_list.end(); ++it_second)
 			{
-				std::list<int> combination = *it_second;
-				Matrix onecol_m(row_num, 1);
-				onecol_m = 1.0;
+				std::list<int> combination = *it_second;		
+				Matrix pow_m(1, combination.size());
 				int k = 0;
 				for (std::list<int>::const_iterator it_third = combination.begin(); it_third != combination.end(); ++it_third,++k)
 				{
-					onecol_m = onecol_m.matpow(x.getSubMatrix(-1, -1, k, k).matpow(*it_third));
+					pow_m.set(0, k, *it_third);
 				}
-				ret_m = ret_m.getMergeMatrix(onecol_m, false);
+				ret_m.set_row_col(x.matpow(pow_m).product(1), -1, -1, index, index);
+				index++;
 			}
 		}
 	}

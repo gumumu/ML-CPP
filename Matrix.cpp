@@ -5,6 +5,13 @@
 
 using namespace std;
 
+Matrix::Matrix()
+{
+	rowNum = 0;
+	colNum = 0;
+	item = new double[0];
+}
+
 Matrix::Matrix(int m, int n)
 {
 	if (m < 0 || n < 0)
@@ -133,6 +140,27 @@ void Matrix::set(int i, int j, double val)
 	item[i*colNum + j] = val;
 }
 
+void Matrix::set_row_col(const Matrix & m, int row_low, int row_up, int col_low, int col_up)
+{
+	int row_low_index = row_low < 0 ? 0 : row_low % rowNum;
+	int row_up_index = row_up < 0 ? rowNum - 1 : row_up % rowNum;
+	int col_low_index = col_low < 0 ? 0 : col_low % colNum;
+	int col_up_index = col_up < 0 ? colNum - 1 : col_up % colNum;
+	
+	if (m.rowNum*m.colNum != (row_up_index - row_low_index + 1)*(col_up_index - col_low_index + 1))
+	{
+		throw "不可设置，元素数不一致";
+	}
+	int index = 0;
+	for (int i = row_low_index; i <= row_up_index; i++)
+	{
+		for (int j = col_low_index; j <= col_up_index; j++, index++)
+		{
+			item[i*colNum + j] = m.item[index];
+		}
+	}
+}
+
 Matrix Matrix::getSubMatrix(int row_low, int row_up, int col_low, int col_up) const
 {
 	int row_low_index = row_low < 0 ? 0 : row_low % rowNum;
@@ -195,28 +223,62 @@ Matrix Matrix::getMergeMatrix(const Matrix & second, bool is_v) const
 
 Matrix Matrix::operator+(const Matrix & m) const
 {
-	if (m.rowNum != rowNum || m.colNum != colNum)
+	Matrix m_ret(rowNum, colNum);
+	if (m.rowNum == rowNum && m.colNum == colNum)
+	{
+		for (int i = 0; i < rowNum*colNum; i++)
+		{
+			m_ret.item[i] = item[i] + m.item[i];
+		}
+	}
+	else if (m.rowNum == rowNum && m.colNum == 1)
+	{
+		for (int i = 0; i < rowNum*colNum; i++)
+		{
+			m_ret.item[i] = item[i] + m.item[i/colNum];
+		}
+	}
+	else if (m.colNum == colNum && m.rowNum == 1)
+	{
+		for (int i = 0; i < rowNum*colNum; i++)
+		{
+			m_ret.item[i] = item[i] + m.item[i%colNum];
+		}
+	}
+	else
 	{
 		throw "不可加";
-	}
-	Matrix m_ret(rowNum, colNum);
-	for (int i = 0; i < rowNum*colNum; i++)
-	{
-		m_ret.item[i] = item[i] + m.item[i];
 	}
 	return m_ret;
 }
 
 Matrix Matrix::operator-(const Matrix & m) const
 {
-	if (m.rowNum != rowNum || m.colNum != colNum)
+	Matrix m_ret(rowNum, colNum);
+	if (m.rowNum == rowNum && m.colNum == colNum)
+	{
+		for (int i = 0; i < rowNum*colNum; i++)
+		{
+			m_ret.item[i] = item[i] - m.item[i];
+		}
+	}
+	else if (m.rowNum == rowNum && m.colNum == 1)
+	{
+		for (int i = 0; i < rowNum*colNum; i++)
+		{
+			m_ret.item[i] = item[i] - m.item[i / colNum];
+		}
+	}
+	else if (m.colNum == colNum && m.rowNum == 1)
+	{
+		for (int i = 0; i < rowNum*colNum; i++)
+		{
+			m_ret.item[i] = item[i] - m.item[i%colNum];
+		}
+	}
+	else
 	{
 		throw "不可减";
-	}
-	Matrix m_ret(rowNum, colNum);
-	for (int i = 0; i < rowNum*colNum; i++)
-	{
-		m_ret.item[i] = item[i] - m.item[i];
 	}
 	return m_ret;
 }
@@ -269,6 +331,54 @@ Matrix Matrix::operator*(const double f) const
 	for (int i = 0; i < rowNum*colNum; i++)
 	{
 		m_ret.item[i] = item[i]*f;
+	}
+	return m_ret;
+}
+
+Matrix Matrix::operator/(const double f) const
+{
+	if (IS_DOUBLE_ZERO(f))
+	{
+		throw "除数为0，不可除";
+	}
+	Matrix m_ret(rowNum, colNum);
+	for (int i = 0; i < rowNum*colNum; i++)
+	{
+		m_ret.item[i] = item[i] / f;
+	}
+	return m_ret;
+}
+
+Matrix Matrix::operator/(const Matrix & m) const
+{
+	Matrix m_ret(rowNum, colNum);
+	if (m.rowNum == rowNum && m.colNum == colNum)
+	{
+		for (int i = 0; i < rowNum*colNum; i++)
+		{
+			if(IS_DOUBLE_ZERO(m.item[i])) throw "除数为0，不可除";
+			m_ret.item[i] = item[i] / m.item[i];
+		}
+	}
+	else if (m.rowNum == rowNum && m.colNum == 1)
+	{
+		for (int i = 0; i < rowNum*colNum; i++)
+		{
+			if (IS_DOUBLE_ZERO(m.item[i / colNum])) throw "除数为0，不可除";
+			m_ret.item[i] = item[i] / m.item[i / colNum];
+		}
+	}
+	else if (m.colNum == colNum && m.rowNum == 1)
+	{
+		for (int i = 0; i < rowNum*colNum; i++)
+		{
+			if (IS_DOUBLE_ZERO(m.item[i%colNum])) throw "除数为0，不可除";
+			m_ret.item[i] = item[i] - m.item[i%colNum];
+		}
+	}
+	else
+	{
+		throw "不可除";
 	}
 	return m_ret;
 }
@@ -342,6 +452,17 @@ Matrix Matrix::Inverse() const
 	return m_ret;
 }
 
+Matrix Matrix::Reciprocal() const
+{
+	Matrix m_ret(rowNum, colNum);
+	for (int i = 0; i < rowNum*colNum; i++)
+	{
+		if(IS_DOUBLE_ZERO(item[i])) throw "有元素为0，不可倒";
+		m_ret.item[i] = 1/item[i];
+	}
+	return m_ret;
+}
+
 double Matrix::vector_norm(bool is_sqrt) const
 {
 	if (colNum != 1 && rowNum != 1)
@@ -399,6 +520,48 @@ double Matrix::all_sum() const
 	return sum;
 }
 
+Matrix Matrix::product(int axis) const
+{
+	if (axis == 1)
+	{
+		Matrix ret_m(rowNum, 1);
+		for (int i = 0; i < rowNum; i++)
+		{
+			double one_row_product = 1.0;
+			for (int j = 0; j < colNum; j++)
+			{
+				one_row_product *= item[i*colNum + j];
+			}
+			ret_m.item[i] = one_row_product;
+		}
+		return ret_m;
+	}
+	else
+	{
+		Matrix ret_m(1, colNum);
+		for (int i = 0; i < colNum; i++)
+		{
+			double one_col_product = 1.0;
+			for (int j = 0; j < rowNum; j++)
+			{
+				one_col_product *= item[j*colNum + i];
+			}
+			ret_m.item[i] = one_col_product;
+		}
+		return ret_m;
+	}
+}
+
+double Matrix::all_product() const
+{
+	double product = 1.0;
+	for (int i = 0; i < rowNum*colNum; i++)
+	{
+		product *= item[i];
+	}
+	return product;
+}
+
 Matrix Matrix::matpow(double p) const
 {
 	Matrix m_ret(rowNum, colNum);
@@ -419,13 +582,68 @@ Matrix Matrix::matpow(int p) const
 	return m_ret;
 }
 
-Matrix Matrix::matpow(const Matrix & m) const
+Matrix Matrix::matpow(const Matrix & m, bool int_pow) const
 {
-	if (m.rowNum != rowNum || m.colNum != colNum) throw "矩阵行列数不相等，无法做点乘";
 	Matrix m_ret(rowNum, colNum);
-	for (int i = 0; i < rowNum*colNum; i++)
+	if (m.rowNum == rowNum && m.colNum == colNum)
 	{
-		m_ret.item[i] = item[i]*m.item[i];
+		for (int i = 0; i < rowNum*colNum; i++)
+		{
+			if(int_pow)	m_ret.item[i] = pow(item[i],(int)m.item[i]);
+			else m_ret.item[i] = pow(item[i], m.item[i]);
+		}
+	}
+	else if (m.rowNum == rowNum && m.colNum == 1)
+	{
+		for (int i = 0; i < rowNum*colNum; i++)
+		{
+			if(int_pow) m_ret.item[i] = pow(item[i], (int)m.item[i / colNum]);
+			else m_ret.item[i] = pow(item[i], m.item[i / colNum]);
+		}
+	}
+	else if (m.colNum == colNum && m.rowNum == 1)
+	{
+		for (int i = 0; i < rowNum*colNum; i++)
+		{
+			if(int_pow) m_ret.item[i] = pow(item[i], (int)m.item[i%colNum]);
+			else m_ret.item[i] = pow(item[i], m.item[i%colNum]);
+		}
+	}
+	else
+	{
+		throw "不可点乘";
+	}
+	return m_ret;
+}
+
+Matrix Matrix::dot(const Matrix & m) const
+{
+
+	Matrix m_ret(rowNum, colNum);
+	if (m.rowNum == rowNum && m.colNum == colNum)
+	{
+		for (int i = 0; i < rowNum*colNum; i++)
+		{
+			m_ret.item[i] = item[i] * m.item[i];
+		}
+	}
+	else if (m.rowNum == rowNum && m.colNum == 1)
+	{
+		for (int i = 0; i < rowNum*colNum; i++)
+		{
+			m_ret.item[i] = item[i] * m.item[i / colNum];
+		}
+	}
+	else if (m.colNum == colNum && m.rowNum == 1)
+	{
+		for (int i = 0; i < rowNum*colNum; i++)
+		{
+			m_ret.item[i] = item[i] * m.item[i%colNum];
+		}
+	}
+	else
+	{
+		throw "不可点乘";
 	}
 	return m_ret;
 }

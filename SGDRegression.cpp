@@ -4,7 +4,7 @@
 
 
 
-SGDRegression::SGDRegression(double eta, double decay, double momentum, bool nesterov):eta(eta), decay(decay), momentum(momentum), nesterov(nesterov), n_epochs(50), tolerance(0.0)
+SGDRegression::SGDRegression(long n_epochs, int batch_size, double tolerance, double eta, double decay, double momentum, bool nesterov):n_epochs(n_epochs), batch_size(batch_size), tolerance(tolerance), eta(eta), decay(decay), momentum(momentum), nesterov(nesterov)
 {
 }
 
@@ -13,13 +13,12 @@ SGDRegression::~SGDRegression()
 {
 }
 
-void SGDRegression::fit(const Matrix &x, const Matrix &y, long epochs , int batch_size, double tolerance_)
+void SGDRegression::fit(const Matrix &x, const Matrix &y)
 {
-	this->n_epochs = epochs;
 	int m = x.getRowNum();
 	Matrix x_ext = extend_x(x);
 
-	if(m == batch_size) this->tolerance = tolerance_;
+	if(m < batch_size) tolerance = 0.0;
 	int batch_num = ceil((1.0*m) / (1.0*batch_size));
 	module = Matrix(x_ext.getColNum(), 1);
 	Matrix module_test(x_ext.getColNum(), 1);
